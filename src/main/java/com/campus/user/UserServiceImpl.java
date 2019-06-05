@@ -4,17 +4,16 @@ import com.campus.system.ServiceContext;
 import com.campus.system.ServiceMenu;
 import com.campus.system.annotation.Service;
 import com.campus.system.storage.StorageService;
-import com.campus.system.storage.model.Box;
-import com.campus.system.storage.model.BoxStore;
-import com.campus.system.storage.model.StorageType;
+import com.campus.system.storage.box.Box;
+import com.campus.system.storage.box.BoxStore;
 import com.campus.system.token.TokenService;
 import com.campus.system.token.model.Token;
 import com.campus.system.user.UserService;
 import com.campus.system.user.model.OrgReq;
 import com.campus.system.user.model.User;
 import com.campus.user.manager.AuthCodeManager;
-import com.oracle.tools.packager.Log;
 
+import java.util.Date;
 import java.util.List;
 @Service(name = ServiceMenu.USER, module = "User")
 public class UserServiceImpl extends UserService {
@@ -25,7 +24,7 @@ public class UserServiceImpl extends UserService {
     public void init(ServiceContext serviceContext) {
         mTokenService = (TokenService) serviceContext.getSystemService(ServiceMenu.TOKEN);
         mStorageService = (StorageService) serviceContext.getSystemService(ServiceMenu.STORAGE);
-        BoxStore boxStore = mStorageService.obtainBoxStore(StorageType.MySql, "username", "password");
+        BoxStore boxStore = mStorageService.obtainBoxStore("", "", "username", "password");
         mUserBox = boxStore.boxFor(User.class);
         mOrgReqBox = boxStore.boxFor(OrgReq.class);
         AuthCodeManager.getInstance().init(serviceContext);
@@ -51,7 +50,7 @@ public class UserServiceImpl extends UserService {
         User user = new User();
         user.setPhone(phone);
         user.setUserId(System.currentTimeMillis() + code + (int)(Math.random() * 1000));
-        mUserBox.put(user);
+        mUserBox.save(user);
         return user;
     }
 
@@ -61,7 +60,7 @@ public class UserServiceImpl extends UserService {
             return;
         }
         user.setPassword(password);
-        mUserBox.put(user);
+        mUserBox.save(user);
     }
 
     public void resetLoginPassword(String tokenStr, String password) {
@@ -70,7 +69,7 @@ public class UserServiceImpl extends UserService {
             return;
         }
         user.setPassword(password);
-        mUserBox.put(user);
+        mUserBox.save(user);
     }
 
     public void sendLoginAuthCode(String phone, String deviceId) {
@@ -80,7 +79,6 @@ public class UserServiceImpl extends UserService {
     public User queryUserDescById(String tokenStr, String userId) {
         Token token = mTokenService.parseToken(tokenStr);
         String fromId = token.getUserId();
-        Log.debug(fromId + "的用户请求" + userId + "用户的简单信息");
         List<User> users = mUserBox.obtainQuery().whereEqualTo("userId", userId).limit(1).query();
         if(users == null || users.size() == 0){
             return null;
@@ -88,19 +86,18 @@ public class UserServiceImpl extends UserService {
         User user = users.get(0);
         user.setPassword("");
         user.setPhone("");
-        user.setBirth(0);
+        user.setBirth(new Date());
         user.setOrgDesc("");
         user.setOrgId("");
         user.setSex(-1);
         user.setSign("");
-        user.setID(0);
+        user.setId(0L);
         return user;
     }
 
     public User queryUserInfoById(String tokenStr, String userId) {
         Token token = mTokenService.parseToken(tokenStr);
         String fromId = token.getUserId();
-        Log.debug(fromId + "的用户请求" + userId + "用户的简单信息");
         List<User> users = mUserBox.obtainQuery().whereEqualTo("userId", userId).limit(1).query();
         if(users == null || users.size() == 0){
             return null;
@@ -108,7 +105,7 @@ public class UserServiceImpl extends UserService {
         User user = users.get(0);
         user.setPassword("");
         user.setPhone("");
-        user.setID(0);
+        user.setId(0L);
         return user;
     }
 
@@ -118,7 +115,7 @@ public class UserServiceImpl extends UserService {
             return;
         }
         user.setHead(head);
-        mUserBox.put(user);
+        mUserBox.update(user);
     }
 
     public void resetUserNickName(String tokenStr, String nickName) {
@@ -127,7 +124,7 @@ public class UserServiceImpl extends UserService {
             return;
         }
         user.setNickName(nickName);
-        mUserBox.put(user);
+        mUserBox.update(user);
     }
 
     public void resetUserSign(String tokenStr, String sign) {
@@ -136,7 +133,7 @@ public class UserServiceImpl extends UserService {
             return;
         }
         user.setSign(sign);
-        mUserBox.put(user);
+        mUserBox.update(user);
     }
 
     public void resetUserLoginPhone(String resetPhoneToken, String phone, String authCode) {
@@ -165,7 +162,7 @@ public class UserServiceImpl extends UserService {
         req.setUserId(user.getUserId());
         req.setStatus(OrgReq.OrgReqStatus.NONE);
         req.setOrgReqId(System.currentTimeMillis() + "" + (int)(Math.random() * 1000));
-        mOrgReqBox.put(req);
+        mOrgReqBox.save(req);
     }
 
     public List<OrgReq> queryOrgReqListByAdmin(String token, String preId, int pageSize) {
@@ -185,7 +182,7 @@ public class UserServiceImpl extends UserService {
 
         OrgReq req = orgReqs.get(0);
         req.setStatus(agree ? OrgReq.OrgReqStatus.AGREE : OrgReq.OrgReqStatus.DISAGREE);
-        mOrgReqBox.put(req);
+        mOrgReqBox.update(req);
     }
 
     public User asyncUserInfo(String tokenStr) {
