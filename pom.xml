@@ -20,5 +20,10 @@
             <artifactId>service-menu</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>groupId</groupId>
+            <artifactId>storage_annotation</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>
