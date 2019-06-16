@@ -8,7 +8,6 @@ import com.campus.system.menu.User_;
 import com.campus.system.storage.StorageService;
 import com.campus.system.storage.box.Box;
 import com.campus.system.storage.box.BoxStore;
-import com.campus.system.storage_annotation.model.Date;
 import com.campus.system.token.TokenService;
 import com.campus.system.token.model.Token;
 import com.campus.system.user.UserService;
@@ -17,7 +16,7 @@ import com.campus.system.user.model.User;
 import com.campus.user.db.Constant;
 import com.campus.user.manager.AuthCodeManager;
 
-import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 @Service(name = ServiceMenu.USER, module = "User")
 public class UserServiceImpl extends UserService {
@@ -55,7 +54,8 @@ public class UserServiceImpl extends UserService {
         User user = new User();
         user.setPhone(phone);
         user.setUserId(System.currentTimeMillis() + code + (int)(Math.random() * 1000));
-        mUserBox.save(user);
+        long id = mUserBox.save(user);
+        user.setId(id);
         return user;
     }
 
@@ -82,13 +82,10 @@ public class UserServiceImpl extends UserService {
     }
 
     public User queryUserDescById(String tokenStr, String userId) {
-        Token token = mTokenService.parseToken(tokenStr);
-        String fromId = token.getUserId();
-        List<User> users = mUserBox.obtainQuery().whereEqualTo(User_.mUserId, userId).limit(1).query();
-        if(users == null || users.size() == 0){
+        User user = asyncUserInfo(tokenStr);
+        if(user == null){
             return null;
         }
-        User user = users.get(0);
         user.setPassword("");
         user.setPhone("");
         user.setBirth(null);
@@ -101,13 +98,10 @@ public class UserServiceImpl extends UserService {
     }
 
     public User queryUserInfoById(String tokenStr, String userId) {
-        Token token = mTokenService.parseToken(tokenStr);
-        String fromId = token.getUserId();
-        List<User> users = mUserBox.obtainQuery().whereEqualTo(User_.mUserId, userId).limit(1).query();
-        if(users == null || users.size() == 0){
+        User user = asyncUserInfo(tokenStr);
+        if(user == null){
             return null;
         }
-        User user = users.get(0);
         user.setPassword("");
         user.setPhone("");
         user.setId(0L);
@@ -161,10 +155,7 @@ public class UserServiceImpl extends UserService {
             return;
         }
         OrgReq req = new OrgReq();
-        Calendar calendar = Calendar.getInstance();
-        req.setCreateTime(new Date(calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.DAY_OF_MONTH)));
+        req.setCreateTime(new Date());
         req.setComment(orgDesc);
         req.setOrgId(orgId);
         req.setUserId(user.getUserId());
@@ -203,4 +194,5 @@ public class UserServiceImpl extends UserService {
         User user = users.get(0);
         return user;
     }
+
 }
